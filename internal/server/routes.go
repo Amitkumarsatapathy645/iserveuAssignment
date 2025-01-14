@@ -2,62 +2,100 @@ package server
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
+	"path/filepath"
 
-	"github.com/julienschmidt/httprouter"
+	"iserveuAssignment/internal/database"
+
+	"github.com/xuri/excelize/v2"
 )
 
-func (s *Server) RegisterRoutes() http.Handler {
-	r := httprouter.New()
-
-	// Wrap all routes with CORS middleware
-	corsWrapper := s.corsMiddleware(r)
-
-	r.HandlerFunc(http.MethodGet, "/", s.HelloWorldHandler)
-
-	r.HandlerFunc(http.MethodGet, "/health", s.healthHandler)
-
-	return corsWrapper
+type Student struct {
+	ID          int     `json:"id"`
+	StudentName string  `json:"student_name"`
+	Address     string  `json:"address"`
+	Mark        float64 `json:"mark"`
 }
 
-// CORS middleware
-func (s *Server) corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// CORS headers
-		w.Header().Set("Access-Control-Allow-Origin", "*") // Use "*" for all origins, or replace with specific origins
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token")
-		w.Header().Set("Access-Control-Allow-Credentials", "false") // Set to "true" if credentials are needed
+func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
+	// Set maximum upload size to 10MB
+	r.ParseMultipartForm(10 << 20)
 
-		// Handle preflight OPTIONS requests
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Error retrieving file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Check if file is an Excel file
+	if filepath.Ext(handler.Filename) != ".xlsx" {
+		http.Error(w, "Only Excel files (.xlsx) are allowed", http.StatusBadRequest)
+		return
+	}
+
+	// Read the Excel file
+	xlsx, err := excelize.OpenReader(file)
+	if err != nil {
+		http.Error(w, "Error reading Excel file", http.StatusBadRequest)
+		return
+	}
+
+	// Get all rows from the first sheet
+	rows, err := xlsx.GetRows(xlsx.GetSheetName(0))
+	if err != nil {
+		http.Error(w, "Error reading Excel rows", http.StatusInternalServerError)
+		return
+	}
+
+	// Skip header row
+	for i := 1; i < len(rows); i++ {
+		row := rows[i]
+		if len(row) < 4 {
+			continue // Skip invalid rows
 		}
 
-		next.ServeHTTP(w, r)
+		// Parse the mark as float64
+		var mark float64
+		fmt.Sscanf(row[3], "%f", &mark)
+
+		// Insert into database
+		_, err = database.DB.Exec(
+			"INSERT INTO students (student_name, address, mark) VALUES ($1, $2, $3)",
+			row[1], row[2], mark,
+		)
+		if err != nil {
+			http.Error(w, "Error inserting data into database", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "File processed successfully",
 	})
 }
 
-func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
-	resp := make(map[string]string)
-	resp["message"] = "Hello World"
-
-	jsonResp, err := json.Marshal(resp)
+func (s *Server) getStudents(w http.ResponseWriter, r *http.Request) {
+	rows, err := database.DB.Query("SELECT id, student_name, address, mark FROM students")
 	if err != nil {
-		log.Fatalf("error handling JSON marshal. Err: %v", err)
+		http.Error(w, "Error retrieving students", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var students []Student
+	for rows.Next() {
+		var student Student
+		err := rows.Scan(&student.ID, &student.StudentName, &student.Address, &student.Mark)
+		if err != nil {
+			http.Error(w, "Error scanning student data", http.StatusInternalServerError)
+			return
+		}
+		students = append(students, student)
 	}
 
-	_, _ = w.Write(jsonResp)
-}
-
-func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
-	jsonResp, err := json.Marshal(s.db.Health())
-
-	if err != nil {
-		log.Fatalf("error handling JSON marshal. Err: %v", err)
-	}
-
-	_, _ = w.Write(jsonResp)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(students)
 }
