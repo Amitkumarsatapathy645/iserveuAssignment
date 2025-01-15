@@ -26,8 +26,9 @@ func (s *Server) Initialize() {
 func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/api/upload", s.handleFileUpload).Methods("POST")
 	s.router.HandleFunc("/api/students", s.getStudents).Methods("GET")
+	// Add the new route for downloading high scorers
+	s.router.HandleFunc("/api/download/highscorers", s.handleDownloadHighScorers).Methods("GET")
 }
-
 func (s *Server) Run() {
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {

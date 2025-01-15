@@ -14,9 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
-    # Ensure the container restarts if it fails
     restart: unless-stopped
-    # Add healthcheck to ensure database is ready
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -32,6 +30,26 @@ services:
       - app-network
     depends_on:
       - db
+
+  app:
+    build: .
+    container_name: student_app
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=student_records
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - RECIPIENT_EMAIL=${RECIPIENT_EMAIL}
+    networks:
+      - app-network
+    depends_on:
+      - db
+
 networks:
   app-network:
     driver: bridge

@@ -2,6 +2,7 @@ package main
 
 import (
 	"iserveuAssignment/internal/database"
+	"iserveuAssignment/internal/scheduler" // New import
 	"iserveuAssignment/internal/server"
 	"log"
 
@@ -17,6 +18,14 @@ func main() {
 	// Initialize database connection
 	if err := database.InitDB(); err != nil {
 		log.Fatal(err)
+	}
+
+	// Initialize and start the email scheduler
+	emailScheduler := scheduler.NewScheduler()
+	if err := emailScheduler.Start(); err != nil {
+		log.Printf("Warning: Failed to start scheduler: %v", err)
+	} else {
+		log.Println("Email scheduler started successfully")
 	}
 
 	// Create and initialize server

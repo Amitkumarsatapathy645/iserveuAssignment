@@ -49,3 +49,13 @@ func InitDB() error {
 	log.Println("Database connection established successfully")
 	return nil
 }
+
+func GetHighScoringStudents() (*sql.Rows, error) {
+	query := `
+        SELECT id, student_name, address, mark 
+        FROM students 
+        WHERE mark > 60 
+        ORDER BY mark DESC
+    `
+	return DB.Query(query)
+}

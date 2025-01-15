@@ -50,6 +50,7 @@ const ProgressBar = ({ value }) => (
 const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [status, setStatus] = useState(null);
   const [students, setStudents] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -118,11 +119,49 @@ const FileUpload = () => {
 
       showToast('File uploaded successfully!', 'success');
       await fetchStudents();
+      setFile(null); // Clear the file after successful upload
     } catch (error) {
       console.error('Upload error:', error);
       showToast(error.message || 'Error uploading file. Please try again.', 'destructive');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleDownloadHighScorers = async () => {
+    if (downloading) return;
+    
+    setDownloading(true);
+    try {
+      showToast('Starting download...', 'default');
+      
+      const response = await fetch('http://localhost:3000/api/download/highscorers', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'high_scorers.csv';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Cleanup
+      window.URL.revokeObjectURL(downloadUrl);
+      showToast('Download completed successfully!', 'success');
+    } catch (error) {
+      console.error('Download error:', error);
+      showToast('Error downloading file. Please try again.', 'destructive');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -173,7 +212,7 @@ const FileUpload = () => {
   }, []);
 
   const handleExport = useCallback(() => {
-    showToast('Export started! Your data is being prepared...');
+    handleDownloadHighScorers();
   }, []);
 
   return (
@@ -296,9 +335,19 @@ const FileUpload = () => {
                 onClick={handleExport}
                 variant="outline"
                 className="flex items-center"
+                disabled={downloading}
               >
-                <Download className="w-4 h-4 mr-2" />
-                Export
+                {downloading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export High Scorers
+                  </>
+                )}
               </Button>
             </div>
           </div>

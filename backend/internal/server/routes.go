@@ -1,8 +1,10 @@
 package server
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"path/filepath"
 
@@ -98,4 +100,59 @@ func (s *Server) getStudents(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(students)
+}
+
+func (s *Server) handleDownloadHighScorers(w http.ResponseWriter, r *http.Request) {
+	// Query students with marks above 60%
+	rows, err := database.DB.Query(`
+        SELECT id, student_name, address, mark 
+        FROM students 
+        WHERE mark > 60 
+        ORDER BY mark DESC
+    `)
+	if err != nil {
+		log.Printf("Error querying high scorers: %v", err)
+		http.Error(w, "Error retrieving high scoring students", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	// Set headers for file download
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment; filename=high_scorers.csv")
+
+	// Create CSV writer
+	writer := csv.NewWriter(w)
+	defer writer.Flush()
+
+	// Write CSV header
+	if err := writer.Write([]string{"ID", "Student Name", "Address", "Mark"}); err != nil {
+		log.Printf("Error writing CSV header: %v", err)
+		http.Error(w, "Error creating CSV file", http.StatusInternalServerError)
+		return
+	}
+
+	// Write student data
+	for rows.Next() {
+		var student Student
+		if err := rows.Scan(&student.ID, &student.StudentName, &student.Address, &student.Mark); err != nil {
+			log.Printf("Error scanning student data: %v", err)
+			http.Error(w, "Error processing student data", http.StatusInternalServerError)
+			return
+		}
+
+		// Create CSV record
+		record := []string{
+			fmt.Sprintf("%d", student.ID),
+			student.StudentName,
+			student.Address,
+			fmt.Sprintf("%.2f", student.Mark),
+		}
+
+		if err := writer.Write(record); err != nil {
+			log.Printf("Error writing student record: %v", err)
+			http.Error(w, "Error writing to CSV file", http.StatusInternalServerError)
+			return
+		}
+	}
 }
