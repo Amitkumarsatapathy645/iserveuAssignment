@@ -32,7 +32,6 @@ services:
       - app-network
     depends_on:
       - db
-
 networks:
   app-network:
     driver: bridge
