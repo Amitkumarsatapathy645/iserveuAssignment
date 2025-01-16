@@ -37,9 +37,9 @@ func (s *EmailService) SendDailyReport(students []database.Student) error {
 	body += "<tr style='background-color: #4CAF50; color: white;'><th>ID</th><th>Name</th><th>Address</th><th>Mark</th></tr>"
 
 	for i, student := range students {
-		rowColor := "#f2f2f2" // Default row color
+		rowColor := "#f2f2f2"
 		if i%2 == 0 {
-			rowColor = "#ffffff" // Alternate row color
+			rowColor = "#ffffff"
 		}
 		body += fmt.Sprintf("<tr style='background-color: %s;'><td style='padding: 8px;'>%d</td><td style='padding: 8px;'>%s</td><td style='padding: 8px;'>%s</td><td style='padding: 8px;'>%.2f</td></tr>",
 			rowColor, student.ID, student.StudentName, student.Address, student.Mark)

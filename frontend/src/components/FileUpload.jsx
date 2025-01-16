@@ -233,6 +233,7 @@ const FileUpload = () => {
           <div className="flex flex-col items-center">
             <div className="w-full max-w-md">
               <div
+                onClick={() => document.querySelector('input[type="file"]').click()}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 className={`

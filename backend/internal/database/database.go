@@ -11,7 +11,7 @@ import (
 
 var DB *sql.DB
 
-// InitDB initializes the database connection
+// here InitDB initializes the database connection
 func InitDB() error {
 	connectionString := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -32,7 +32,7 @@ func InitDB() error {
 		return fmt.Errorf("error connecting to database: %v", err)
 	}
 
-	// Create the students table if it doesn't exist
+	// Created the students table if it doesn't exist
 	createTableSQL := `
     CREATE TABLE IF NOT EXISTS students (
         id SERIAL PRIMARY KEY,
@@ -50,6 +50,7 @@ func InitDB() error {
 	return nil
 }
 
+// retrieves a list of students with marks above 60
 func GetHighScoringStudents() (*sql.Rows, error) {
 	query := `
         SELECT id, student_name, address, mark 
