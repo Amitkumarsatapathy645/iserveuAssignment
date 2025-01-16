@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, FileUp, Check, AlertCircle, Loader2, X, Download } from 'lucide-react';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = [
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // .xlsx
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
 ];
 
 const Alert = ({ children, variant = 'default' }) => {
@@ -119,7 +119,7 @@ const FileUpload = () => {
 
       showToast('File uploaded successfully!', 'success');
       await fetchStudents();
-      setFile(null); // Clear the file after successful upload
+      setFile(null);
     } catch (error) {
       console.error('Upload error:', error);
       showToast(error.message || 'Error uploading file. Please try again.', 'destructive');
@@ -228,7 +228,7 @@ const FileUpload = () => {
           </p>
         </div>
 
-        {/* Upload Area */}
+       {/* upload area */}
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="flex flex-col items-center">
             <div className="w-full max-w-md">
