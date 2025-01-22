@@ -154,7 +154,6 @@ const FileUpload = () => {
       link.click();
       document.body.removeChild(link);
 
-      // Cleanup
       window.URL.revokeObjectURL(downloadUrl);
       showToast('Download completed successfully!', 'success');
     } catch (error) {
@@ -211,6 +210,15 @@ const FileUpload = () => {
     setUploadProgress(0);
   }, []);
 
+  const handleFileClick = (e) => {
+    e.stopPropagation();
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = ''; // Reset the input value
+      fileInput.click();
+    }
+  };
+
   const handleExport = useCallback(() => {
     handleDownloadHighScorers();
   }, []);
@@ -218,7 +226,6 @@ const FileUpload = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Student Data Management Iserveu
@@ -228,12 +235,11 @@ const FileUpload = () => {
           </p>
         </div>
 
-       {/* upload area */}
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="flex flex-col items-center">
             <div className="w-full max-w-md">
               <div
-                onClick={() => document.querySelector('input[type="file"]').click()}
+                onClick={handleFileClick}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 className={`
@@ -320,7 +326,6 @@ const FileUpload = () => {
           </div>
         </div>
 
-        {/* Results Table */}
         <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">Student Records</h2>

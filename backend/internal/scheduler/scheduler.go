@@ -22,7 +22,7 @@ func NewScheduler() *Scheduler {
 func (s *Scheduler) Start() error {
 	scheduler := gocron.NewScheduler(time.Local)
 
-	_, err := scheduler.Every(1).Day().At("23:00").Do(s.sendDailyReport)
+	_, err := scheduler.Every(1).Day().At("16:44").Do(s.sendDailyReport)
 	if err != nil {
 		return err
 	}
